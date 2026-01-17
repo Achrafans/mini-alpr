@@ -1,0 +1,15 @@
+# Dépendances principales
+opencv-python==4.8.1.78
+easyocr==1.7.1
+numpy==1.24.3
+Pillow==10.0.0
+
+# Pour l'interface (optionnel)
+streamlit==1.28.0
+
+# Pour les tests (optionnel)
+pytest==7.4.2
+
+# Pour le rapport (optionnel)
+matplotlib==3.7.2
+pandas==2.0.3
