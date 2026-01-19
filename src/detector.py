@@ -1,34 +1,40 @@
 """
-Détection des plaques dans les images
+Détecteur de plaques d'immatriculation
 """
 
 import cv2
 import numpy as np
-from .preprocessor import ImagePreprocessor
+from preprocessor import ImagePreprocessor
 
 class PlateDetector:
-    """Détecteur de plaques d'immatriculation"""
+    """Détecte les plaques dans les images"""
     
     def __init__(self, debug=False):
         self.debug = debug
         self.preprocessor = ImagePreprocessor()
         
+        if debug:
+            print("🔧 Détecteur de plaques initialisé")
+    
     def find_plates(self, image):
-        """
-        Trouve les plaques dans une image
-        Retourne une liste de régions d'intérêt (ROI)
-        """
-        plates = []
-        
-        # 1. Pré-traiter l'image
+        """Trouve les plaques dans une image"""
+        # Pré-traiter l'image
         processed = self.preprocessor.preprocess_for_ocr(image)
         
-        # 2. Chercher des contours (méthode simple)
-        # Pour un vrai projet, on utiliserait YOLO ou un modèle ML
-        # Mais pour un mini-projet, cette méthode est suffisante
+        # Détection par contours (méthode simple)
+        plates = self._detect_by_contours(processed, image)
+        
+        if self.debug:
+            print(f"  📊 {len(plates)} région(s) potentielle(s) de plaque")
+        
+        return plates
+    
+    def _detect_by_contours(self, processed_image, original_image):
+        """Détection par analyse de contours"""
+        plates = []
         
         # Seuillage
-        _, thresh = cv2.threshold(processed, 0, 255, 
+        _, thresh = cv2.threshold(processed_image, 0, 255, 
                                  cv2.THRESH_BINARY + cv2.THRESH_OTSU)
         
         # Trouver les contours
@@ -51,23 +57,16 @@ class PlateDetector:
             
             # Ratio typique d'une plaque (~4.7:1)
             aspect_ratio = w / h
-            if 3 < aspect_ratio < 6:
+            if 3.0 < aspect_ratio < 6.0:
+                # ROI (Region of Interest)
+                roi = original_image[y:y+h, x:x+w]
+                
                 plates.append({
                     'bbox': [x, y, x + w, y + h],
-                    'confidence': 0.5,  # Estimation
-                    'roi': image[y:y+h, x:x+w]
+                    'roi': roi,
+                    'confidence': 0.7,  # Estimation
+                    'aspect_ratio': aspect_ratio,
+                    'area': area
                 })
         
-        if self.debug:
-            print(f"  Régions détectées: {len(plates)}")
-        
         return plates
-    
-    def detect_with_easyocr(self, image):
-        """
-        Utilise EasyOCR pour détecter ET lire en une passe
-        C'est la méthode la plus simple pour un mini-projet
-        """
-        # Cette méthode est implémentée dans OCREngine
-        # On la garde ici pour compatibilité
-        return []

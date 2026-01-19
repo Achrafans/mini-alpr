@@ -1,16 +1,51 @@
-
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
+*.so
+*.egg
+.egg-info/
+dist/
+build/
+
+# Environnements virtuels
+.env
+.venv
 env/
 venv/
+venv310/
+ENV/
+
+# Éditeurs/IDE
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+
+# Système
 .DS_Store
 Thumbs.db
+desktop.ini
+
+# Données de sortie
 data/output/
+data/plates/
+data/results/
+
+# Fichiers temporaires
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Logs
+*.log
+logs/
+
+# Images temporaires (les inputs sont déjà dans data/input/)
 *.jpg
 *.png
 *.jpeg
+*.bmp
+*.gif

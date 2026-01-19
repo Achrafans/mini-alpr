@@ -1,15 +1,15 @@
-# Dépendances principales
-opencv-python==4.8.1.78
-easyocr==1.7.1
+# ===========================================
+# ALPR PROJECT - Python 3.10 Requirements
+# ===========================================
+
+# Librairies de base (testées avec Python 3.10)
 numpy==1.24.3
+opencv-python==4.8.1.78
 Pillow==10.0.0
 
-# Pour l'interface (optionnel)
-streamlit==1.28.0
+# OCR - EasyOCR (fonctionne parfaitement avec 3.10)
+easyocr==1.7.1
 
-# Pour les tests (optionnel)
-pytest==7.4.2
-
-# Pour le rapport (optionnel)
-matplotlib==3.7.2
-pandas==2.0.3
+# Utilitaires
+setuptools==68.2.2
+pip==23.3.1

@@ -1,65 +1,81 @@
 """
-Fonctions utilitaires
+Fonctions utilitaires pour l'ALPR
 """
 
 import cv2
-import os
+import numpy as np
 from datetime import datetime
-
-def ensure_dir(directory):
-    """Crée un dossier s'il n'existe pas"""
-    if not os.path.exists(directory):
-        os.makedirs(directory)
-
-def load_image(image_path):
-    """Charge une image avec OpenCV"""
-    if not os.path.exists(image_path):
-        raise FileNotFoundError(f"Image non trouvée: {image_path}")
-    
-    image = cv2.imread(image_path)
-    if image is None:
-        raise ValueError(f"Impossible de lire l'image: {image_path}")
-    
-    return image
-
-def save_image(image, output_path):
-    """Sauvegarde une image"""
-    cv2.imwrite(output_path, image)
-    print(f"  Image sauvegardée: {output_path}")
 
 def draw_results(image, plates):
     """Dessine les résultats sur l'image"""
     result_image = image.copy()
     
     for plate in plates:
-        # Récupérer les coordonnées
         bbox = plate['bbox']
-        if len(bbox) == 4:  # [x1, y1, x2, y2]
-            x1, y1, x2, y2 = map(int, bbox)
-            top_left = (x1, y1)
-            bottom_right = (x2, y2)
-        else:  # [[x1,y1], [x2,y2], [x3,y3], [x4,y4]]
-            points = [(int(p[0]), int(p[1])) for p in bbox]
-            top_left = points[0]
-            bottom_right = points[2]
         
-        # Couleur selon la confiance
-        color = (0, 255, 0) if plate['confidence'] > 0.7 else (0, 165, 255)
+        # Convertir en points
+        points = np.array(bbox, dtype=np.int32)
         
-        # Dessiner rectangle
-        cv2.rectangle(result_image, top_left, bottom_right, color, 2)
+        # Couleur selon confiance
+        confidence = plate['confidence']
+        if confidence > 0.8:
+            color = (0, 255, 0)    # Vert
+        elif confidence > 0.6:
+            color = (0, 200, 255)  # Orange
+        else:
+            color = (0, 0, 255)    # Rouge
         
-        # Ajouter texte
-        label = f"{plate['text']} ({plate['confidence']:.1%})"
-        cv2.putText(result_image, label, 
-                   (top_left[0], top_left[1] - 10),
-                   cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        # Dessiner polygone
+        cv2.polylines(result_image, [points], True, color, 2)
+        
+        # Texte
+        label = f"{plate['text']} ({confidence:.0%})"
+        x_min = int(min(p[0] for p in bbox))
+        y_min = int(min(p[1] for p in bbox))
+        
+        # Fond pour le texte
+        (text_width, text_height), _ = cv2.getTextSize(
+            label, cv2.FONT_HERSHEY_SIMPLEX, 0.6, 2
+        )
+        cv2.rectangle(result_image,
+                     (x_min, y_min - text_height - 10),
+                     (x_min + text_width, y_min),
+                     color, -1)
+        
+        cv2.putText(result_image, label,
+                   (x_min, y_min - 5),
+                   cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
     
     return result_image
 
-def generate_filename(base_name, suffix="", extension="jpg"):
-    """Génère un nom de fichier unique"""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    if suffix:
-        return f"{base_name}_{suffix}_{timestamp}.{extension}"
-    return f"{base_name}_{timestamp}.{extension}"
+def display_image(image, title="Résultat", timeout=3000):
+    """Affiche une image temporairement"""
+    cv2.imshow(title, image)
+    cv2.waitKey(timeout)
+    cv2.destroyAllWindows()
+
+def get_timestamp():
+    """Retourne un timestamp formaté"""
+    return datetime.now().strftime("%Y%m%d_%H%M%S")
+
+def print_summary(input_path, plates, output_files):
+    """Affiche un résumé des résultats"""
+    print("\n" + "="*50)
+    print("📊 RÉSUMÉ DE L'ANALYSE")
+    print("="*50)
+    
+    print(f"\n📁 Fichier: {input_path}")
+    print(f"📅 Horodatage: {get_timestamp()}")
+    
+    if plates:
+        print(f"\n✅ {len(plates)} plaque(s) détectée(s):")
+        for plate in plates:
+            print(f"  • {plate['text']} ({plate['confidence']:.1%})")
+    else:
+        print("\n⚠️  Aucune plaque détectée")
+    
+    if output_files:
+        print(f"\n💾 Fichiers générés:")
+        for key, path in output_files.items():
+            if path and key != 'plates':
+                print(f"  • {key}: {path}")

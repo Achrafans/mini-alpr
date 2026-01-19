@@ -1,12 +1,12 @@
 """
-Pré-traitement des images
+Pré-traitement des images pour l'OCR
 """
 
 import cv2
 import numpy as np
 
 class ImagePreprocessor:
-    """Classe pour le pré-traitement d'images"""
+    """Pré-traite les images pour améliorer l'OCR"""
     
     @staticmethod
     def to_grayscale(image):
@@ -16,7 +16,7 @@ class ImagePreprocessor:
         return image
     
     @staticmethod
-    def resize(image, max_width=800):
+    def resize(image, max_width=1200):
         """Redimensionne l'image (conserve ratio)"""
         if image.shape[1] > max_width:
             ratio = max_width / image.shape[1]
@@ -26,8 +26,7 @@ class ImagePreprocessor:
     
     @staticmethod
     def enhance_contrast(image):
-        """Améliore le contraste"""
-        # CLAHE (Contrast Limited Adaptive Histogram Equalization)
+        """Améliore le contraste (CLAHE)"""
         if len(image.shape) == 3:
             image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
         
@@ -40,29 +39,29 @@ class ImagePreprocessor:
         return cv2.fastNlMeansDenoising(image, h=10)
     
     @staticmethod
-    def preprocess_for_ocr(image):
-        """Pipeline complet de pré-traitement pour OCR"""
-        # 1. Convertir en gris si nécessaire
-        gray = ImagePreprocessor.to_grayscale(image)
-        
-        # 2. Améliorer le contraste
-        enhanced = ImagePreprocessor.enhance_contrast(gray)
-        
-        # 3. Réduire le bruit
-        denoised = ImagePreprocessor.denoise(enhanced)
-        
-        return denoised
+    def sharpen(image):
+        """Améliore la netteté"""
+        kernel = np.array([[-1, -1, -1],
+                          [-1,  9, -1],
+                          [-1, -1, -1]])
+        return cv2.filter2D(image, -1, kernel)
     
     @staticmethod
-    def extract_plate_region(image, bbox):
-        """Extrait une région de plaque"""
-        if len(bbox) == 4:  # Format rectangle
-            x1, y1, x2, y2 = map(int, bbox)
-            return image[y1:y2, x1:x2]
-        else:  # Format polygone
-            # Trouver les limites
-            xs = [p[0] for p in bbox]
-            ys = [p[1] for p in bbox]
-            x1, x2 = int(min(xs)), int(max(xs))
-            y1, y2 = int(min(ys)), int(max(ys))
-            return image[y1:y2, x1:x2]
+    def preprocess_for_ocr(image):
+        """Pipeline complet de pré-traitement pour OCR"""
+        # 1. Redimensionner
+        image = ImagePreprocessor.resize(image)
+        
+        # 2. Convertir en gris
+        gray = ImagePreprocessor.to_grayscale(image)
+        
+        # 3. Améliorer contraste
+        enhanced = ImagePreprocessor.enhance_contrast(gray)
+        
+        # 4. Réduire bruit
+        denoised = ImagePreprocessor.denoise(enhanced)
+        
+        # 5. Améliorer netteté
+        sharpened = ImagePreprocessor.sharpen(denoised)
+        
+        return sharpened
